@@ -7,23 +7,38 @@ public class client {
 
 	public static void main(String[] args)throws Exception {
 		// TODO Auto-generated method stub
-		   DatagramSocket socket = new DatagramSocket();
-	        Scanner sc = new Scanner(System.in);
+		DatagramSocket socket = new DatagramSocket();
+        InetAddress serveurAdresse = InetAddress.getByName("localhost");
+        int port = 1234;
 
-	        System.out.print("Entrez votre nom d'utilisateur : ");
-	        String username = sc.nextLine();
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Entrez votre nom d'utilisateur : ");
+        String username = sc.nextLine();
 
-	        InetAddress serveurAdresse = InetAddress.getByName("localhost");
-	        int port = 1234;
+        // Thread pour la réception asynchrone
+        Thread reception = new Thread(() -> {
+            byte[] buffer = new byte[1024];
+            while (true) {
+                try {
+                    DatagramPacket paquet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(paquet);
+                    String msgRecu = new String(paquet.getData(), 0, paquet.getLength());
+                    System.out.println("\n " + msgRecu);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        reception.start();
 
-	        while (true) {
-	            System.out.print(" Entrez votre message : ");
-	            String message = sc.nextLine();
+        // Boucle d’envoi
+        while (true) {
+            System.out.print(" Votre message : ");
+            String message = sc.nextLine();
+            String msgFinal = "[" + username + "] : " + message;
 
-	            String msgFinal = "[" + username + "] : " + message;
-	            byte buffer[] = msgFinal.getBytes();
-
-	            DatagramPacket donneesEmises = new DatagramPacket(buffer, buffer.length, serveurAdresse, port);
-	            socket.send(donneesEmises);
-	            System.out.println("Message envoyé !");
-	        }}}
+            byte[] data = msgFinal.getBytes();
+            DatagramPacket packet = new DatagramPacket(data, data.length, serveurAdresse, port);
+            socket.send(packet);
+        }
+	}}

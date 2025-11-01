@@ -1,5 +1,6 @@
 package server;
-import java.net.DatagramPacket;
+import java.net.*;
+import java.util.*;
 import java.net.DatagramSocket;
 
 public class server {
@@ -7,20 +8,34 @@ public class server {
 	
 		// TODO Auto-generated method stub
 		 static byte buffer[] = new byte[1024];
+		
+		    static Set<SocketAddress> clients = new HashSet<>();
 
 		    public static void main(String argv[]) throws Exception {
 		        DatagramSocket socket = new DatagramSocket(1234);
-		        System.out.println("Lancement du serveur UDP sur le port 1234...");
+		        System.out.println(" Serveur UDP prêt sur le port 1234...");
 
 		        while (true) {
 		            DatagramPacket paquet = new DatagramPacket(buffer, buffer.length);
-		            socket.receive(paquet); // attente bloquante
+		            socket.receive(paquet);
 
-		            int taille = paquet.getLength();
-		            String donnees = new String(paquet.getData(), 0, taille);
-		            System.out.println("Message reçu de " +paquet.getAddress().getHostAddress() + ":" + paquet.getPort());
-		            System.out.println(" Contenu : " + donnees);
+		            String message = new String(paquet.getData(), 0, paquet.getLength());
+		            SocketAddress expediteur = paquet.getSocketAddress();
+
+		            clients.add(expediteur); // mémorise le client
+
+		            System.out.println(" Reçu de " + expediteur + " : " + message);
+
+		            //  Diffusion à tous les autres clients
+		            for (SocketAddress client : clients) {
+		                if (!client.equals(expediteur)) {
+		                    byte[] data = message.getBytes();
+		                    DatagramPacket envoi = new DatagramPacket(data, data.length, client);
+		                    socket.send(envoi);
+		                }
+		            }
 		        }
+
 
 	}
 
